@@ -5,7 +5,8 @@ description: Edita Reels verticales (Instagram/TikTok) a partir de entrevistas g
 
 # Editar un Reel con reel-kit
 
-Flujo probado en el reel del Tech AI Summit (`examples/reel.toml`). Herramienta: el paquete `reelkit` de este repo
+Flujo probado en el Tech AI Summit: un reel resumen de varias entrevistas (`examples/reel.toml`) y reels de una
+entrevista completa (`examples/entrevista.toml`). Los reels tuvieron buena respuesta: mantén este formato. Herramienta: el paquete `reelkit` de este repo
 (`python -m reelkit ...` desde la raíz del repo, con el venv activo). Todo se comunica en español con el usuario.
 
 ## 0. Preparar el entorno (una vez por PC)
@@ -27,6 +28,13 @@ Flujo probado en el reel del Tech AI Summit (`examples/reel.toml`). Herramienta:
 - `python -m reelkit ingest <proyecto>` → `work/`: `media.json` (resolución, rotación, HDR), `audio_levels.tsv` (LUFS por
   clip), `sheets/overview_*.jpg` (miniaturas: **míralas** con Read para entender cada clip), `all_transcripts.txt`.
 - Lee todo `all_transcripts.txt`. Clasifica: entrevistas útiles, b-roll (ambiente, público, stands, personajes), descartes.
+- **Pregunta quién es quién** si hay varios entrevistadores (describe ropa/aspecto y a quién entrevistó cada uno): el
+  usuario puede pedir "un reel mío" o "uno de Matías". No adivines por el nombre.
+- Mide el audio de cada entrevista candidata (recorte >0.9 FS, 250 Hz, 4.5–9 kHz con `spectrum`) **antes** de proponerla:
+  una toma muy recortada genera quejas de "saturado" que no se arreglan del todo.
+- Varios reels del mismo material: un proyecto por reel con `raw_dir`/`work_dir` apuntando al proyecto original
+  (`"../evento/raw"`, `"../evento/analysis"`): no se re-transcribe nada. Se pueden armar en paralelo (la GPU aguanta dos
+  Whisper large-v3 int8 en 6 GB).
 
 ## 2. Guion (pídele aprobación al usuario antes de cortar)
 
@@ -36,7 +44,14 @@ Estructura que funcionó:
 - **DESARROLLO**: 3–4 bloques temáticos, cada uno con `chip` (se numeran solos). Deja que cada entrevistado **termine la idea**: el usuario prefirió contexto completo antes que frases sueltas.
 - **CONCLUSIÓN**: el consejo más fuerte, con espacio suficiente.
 - **CIERRE**: b-roll llamativo + CTA (`[text] cta`) con flecha animada.
-Presenta el guion como tabla: bloque, clip, tramo, frase. Evita datos dudosos que el entrevistado mismo no sabe confirmar.
+**Formato "entrevista completa"** (también funcionó, 2:30–3:00, máximo de Instagram 3 min):
+HOOK con la frase más fuerte sacada de una respuesta (se repite después en su contexto) → tarjeta de título sobre b-roll
+(`ENTREVISTA AL CEO DE|{EMPRESA}`) → cada pregunta del entrevistador abre un bloque con `chip` y su respuesta completa →
+CTA. Cartel con el nombre del entrevistador (`tag = ["MAYKOL", "Tech AI Summit"]`) y del entrevistado (`retag` al volver).
+Saca: errores del entrevistador (dijo "Google" en vez de "Huawei"), autopresentaciones con nombres que no puedes
+confirmar, frases repetidas, agradecimientos finales.
+Presenta el guion como tabla: bloque, clip, tramo, frase. Con varias opciones, usa AskUserQuestion con el guion de cada
+una en la vista previa. Evita datos dudosos que el entrevistado mismo no sabe confirmar.
 Duración: 60–100 s funcionó; si crece, propone qué bloque sacar.
 
 ## 3. Fijar cortes (lo más importante: aquí se cometieron los errores)
@@ -52,6 +67,14 @@ Para cada entrada/salida:
 3. Recién entonces escribe `in`/`out` en `reel.toml`. Al compilar, `build` repite el chequeo de bordes y avisa (⚠).
 Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado que los disimula).
 
+**Muletillas y trabadas** (el usuario las nota siempre: "eh, eh…", "estamos… hoy estamos", "con… con personas"):
+`python -m reelkit fillers <proyecto> SRC A B` sobre cada tramo de voz **antes** de compilar, sobre todo en las
+presentaciones del entrevistador. Whisper no escribe los "eh" y con contexto "limpia" las repeticiones; `fillers` parte
+en frases por las pausas reales, transcribe cada una sola y hace una prueba de eliminación (si al silenciar un bloque el
+texto no cambia, era muletilla). Tiene falsos positivos: confirma con `verify` y corta saltándote el bloque (dos
+segmentos del mismo `src`). Si la muletilla está pegada a una palabra sin silencio, corta en el valle más bajo y escucha
+"inicio"/"final". Cuando el usuario reporte una muletilla, búscala tú (energía + palabras), no le pidas más detalles.
+
 ## 4. Audio
 
 - Todo se nivela solo: voz a -16 LUFS por tramo, mezcla final a -14 LUFS (estándar Reels/TikTok).
@@ -63,6 +86,8 @@ Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado
 - `restore = true` (VoiceFixer, opcional, `requirements-restore.txt` en otro venv + `REELKIT_RESTORE_PY`) reconstruye la
   voz con IA y reduce más la distorsión, pero puede deformar consonantes (convirtió "Shadow AI" en "Chabón AI").
   Úsalo solo si `verify` confirma que las palabras clave siguen entendiéndose, y deja que el usuario elija oyendo un A/B.
+- Voz fina/áspera (el caso opuesto al micrófono pegado): `post = "highpass=f=90,equalizer=f=200:t=q:w=1:g=3,highshelf=f=4500:g=-5,alimiter=limit=0.89"`
+  reemplaza la cadena de ese segmento (cualquier filtro de audio de ffmpeg).
 - B-roll: su sonido va **silenciado** (voces de fondo pueden decir groserías; pasó). La música lo cubre.
 - Voz en off sobre otra toma: `vo = { src = "...", in = ..., out = ... }`.
 
@@ -74,6 +99,9 @@ Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado
 3. Elige un drop tal que **desde el drop hasta el final del reel no haya huecos/silencios** del tema (pasó: el tema se
    apagaba bajo el cierre). `drop_at` = segundo exacto del drop; cae en el segmento con `drop = true`.
    La música baja sola bajo la voz (sidechain) y sube en b-roll y cierre.
+4. Cuenta: el tema suena desde `drop_at − t_drop` hasta `drop_at − t_drop + duración_del_reel`; todo ese tramo debe ser
+   continuo. En reels largos el drop puede ir a mitad del video (al empezar la 2ª o 3ª pregunta) como "segundo aire".
+   `build` avisa (⚠) si la música cae en silencios.
 
 ## 6. Compilar, revisar, iterar
 
@@ -87,10 +115,20 @@ Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado
 - Cada feedback → mapea el segundo del reel al segmento (la salida de build lista los tiempos acumulados), corrige
   `reel.toml`, `verify`, y compila una versión nueva (v2, v3…). Nunca sobrescribas la versión que el usuario está revisando.
 
+## 7. Entregar
+
+- Ruta del MP4 + tabla de bloques con tiempos del reel + qué se sacó y por qué + qué debe revisar con audífonos.
+- Si lo pide, descripción para el post: primera línea = el hook entre comillas; 3 viñetas con lo que aporta cada bloque;
+  pregunta CTA; etiquetas `@[Empresa]` para que el usuario ponga las cuentas reales (no inventes handles); crédito de
+  la música (obligatorio con CC BY); 6–9 hashtags. Primera persona si es "su" entrevista.
+
 ## Referencia rápida de reel.toml
 
 `[[segment]]`: `id`, `src` (nombre del archivo sin extensión), `in`, `out`, `tag = ["NOMBRE", "cargo"]`, `retag`,
 `chip`, `hook`, `repair`, `fix = { palabra_mal_transcrita = "corrección" }`, `broll`, `title`, `cta`, `drop`, `vo`,
-`focus_x` (0–1, para recortar videos horizontales a vertical), `punch`.
+`focus_x` (0–1, para recortar videos horizontales a vertical), `punch`, `post` (cadena de audio propia),
+`voice_lufs`, `restore`.
 Texto: `{palabra}` = caja de acento, `|` = salto de línea. `[captions] highlight` = palabras en amarillo,
-`replace` = correcciones globales (`"re:^regex" = "TEXTO"`).
+`replace` = correcciones globales (`"re:^regex" = "TEXTO"`; valor `""` borra la palabra, p.ej. `"re:^-gpt$" = ""`).
+Las tablas inline de TOML van en **una sola línea**. Corrige en subtítulos lo que Whisper entiende mal por contexto
+(ticketera, startup, ChatGPT, nombres de empresa) y avisa al usuario cuáles adivinaste.

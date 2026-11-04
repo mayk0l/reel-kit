@@ -34,3 +34,57 @@ def verify(p: Project, specs, edge=1.3):
             print(f"  final    : {_say(sl(b - edge, b))}")
         for issue in audio.edge_issues(x, a, b):
             print(f"  ⚠ {issue}")
+
+
+FILLERS = {"eh", "ehh", "eeh", "em", "emm", "mm", "mmm", "este", "ah", "eh eh", "eh, eh", "o sea", "bueno"}
+NOISE = {"gracias", "gracias.", "ya", "sí", "(nada)"}
+
+
+def _norm(t):
+    return " ".join("".join(c for c in w if c.isalnum()) for w in t.lower().split()).strip()
+
+
+def fillers(p: Project, src, a, b, gap=0.3):
+    """Muletillas y trabadas. Whisper omite los "eh" y, con contexto, 'arregla' las repeticiones, así que:
+      1. el tramo se parte en frases según las pausas reales y cada frase se transcribe sola;
+      2. prueba de eliminación: cada bloque de voz de la frase se silencia y se vuelve a transcribir; si el texto
+         no cambia, ese bloque no aportaba palabras = MULETILLA ("eh, eh…" entre "Izurieta" y "gerente general");
+      3. una frase corta cuyas palabras reaparecen al comienzo de la siguiente = ARRANQUE EN FALSO
+         ("¿estamos?" + "hoy estamos con…").
+    Es una ayuda: confirma siempre con `verify` y avisa al usuario que escuche esos puntos."""
+    x = audio.load(p.wav(src))
+    regs = [r for r in audio.speech_regions(x, a, b, below=25) if r[1] - r[0] >= 0.06]
+    phrases = []
+    for s_, e_ in regs:
+        if phrases and s_ - phrases[-1][1] < gap:
+            phrases[-1][1] = e_
+            phrases[-1][2].append((s_, e_))
+        else:
+            phrases.append([s_, e_, [(s_, e_)]])
+    clip = lambda t0, t1: x[int(max(0, t0) * audio.SR):int(t1 * audio.SR)].copy()
+    texts = [_say(clip(s_ - 0.05, e_ + 0.08)) for s_, e_, _ in phrases]
+    print(f"== {src} {a}-{b}: {len(phrases)} frases")
+    found = 0
+    for i, ((s_, e_, blocks), t) in enumerate(zip(phrases, texts)):
+        n = _norm(t)
+        nxt = _norm(texts[i + 1]).split()[:4] if i + 1 < len(texts) else []
+        flag = ""
+        if n in FILLERS or (n and all(w in FILLERS for w in n.split())):
+            flag = "⚠ MULETILLA: sácala entera"
+        elif n and nxt and len(n.split()) <= 3 and all(w in nxt for w in n.split()):
+            flag = "⚠ ARRANQUE EN FALSO: empieza en la frase siguiente"
+        elif n in NOISE or len(n) <= 2:
+            flag = "? corta: puede ser ruido o muletilla, escúchala"
+        print(f"  {s_:7.2f}-{e_:7.2f}  {t[:72]:<72} {flag}")
+        found += bool(flag.startswith("⚠"))
+        if len(blocks) > 1 and not flag:
+            base = clip(s_ - 0.05, e_ + 0.08)
+            for bs, be in blocks:
+                if be - bs < 0.15:
+                    continue
+                y = base.copy()
+                y[int((bs - s_ + 0.05) * audio.SR):int((be - s_ + 0.05) * audio.SR)] = 0
+                if _norm(_say(y)) == n:
+                    found += 1
+                    print(f"      ⚠ posible muletilla/trabada en {bs:.2f}-{be:.2f}: al quitarla el texto no cambia (confírmalo con verify)")
+    print(f"  {found} punto(s) a corregir" if found else "  sin muletillas detectadas (igual confírmalo escuchando)")

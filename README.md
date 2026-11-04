@@ -91,6 +91,7 @@ En Windows, reemplaza `.venv/bin/python` por `.venv\Scripts\python`.
 .venv/bin/python -m reelkit ingest  ../mi-reel                               # analiza raw/
 .venv/bin/python -m reelkit energy  ../mi-reel IMG_4560 151.2 153.4          # dónde están los silencios
 .venv/bin/python -m reelkit verify  ../mi-reel IMG_4560 149.10 152.47        # escucha un corte
+.venv/bin/python -m reelkit fillers  ../mi-reel IMG_4560 1.7 8.9           # muletillas y trabadas
 .venv/bin/python -m reelkit spectrum ../mi-reel IMG_4543 64.7 99             # ¿voz saturada?
 .venv/bin/python -m reelkit music-search "tech house"
 .venv/bin/python -m reelkit music-get <url> ../mi-reel/music/tema.mp3
@@ -101,7 +102,9 @@ En Windows, reemplaza `.venv/bin/python` por `.venv\Scripts\python`.
 
 Una carpeta de proyecto contiene:
 
-- `reel.toml`: guion, cortes, textos y música. Ver [`examples/reel.toml`](examples/reel.toml), el reel del Tech AI Summit completo.
+- `reel.toml`: guion, cortes, textos y música. Hay dos ejemplos reales del Tech AI Summit:
+  - [`examples/reel.toml`](examples/reel.toml): reel resumen con varias entrevistas.
+  - [`examples/entrevista.toml`](examples/entrevista.toml): una entrevista completa, con pregunta → respuesta por bloque.
 - `raw/`: los videos originales.
 - `music/`: opcional, la pista de música.
 

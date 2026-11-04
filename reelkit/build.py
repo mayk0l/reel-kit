@@ -110,7 +110,7 @@ def build(p: Project, version="v1"):
             else:
                 g = seg.get("voice_lufs", au["voice_lufs"] - (1.5 if seg.get("repair") else 0)) - \
                     loudness(T, p.media(seg["src"]), seg["in"], seg["out"] - seg["in"])["lufs"]
-                post = audio.REPAIR_POST if seg.get("repair") else audio.VOICE_POST
+                post = seg.get("post") or (audio.REPAIR_POST if seg.get("repair") else audio.VOICE_POST)
             parts = audio.trim_pauses(x, seg["in"], seg["out"], au["pause_max"], au["pause_keep"])
             for k, (a, b) in enumerate(parts):
                 base = 1.07 if (st["jumpcut_zoom"] and k % 2 == 1) else 1.0
@@ -143,6 +143,7 @@ def build(p: Project, version="v1"):
         drop_piece = next((q for q in timeline if q["seg"].get("drop")), timeline[0])
         m_start = max(0.0, mc["drop_at"] - drop_piece["t0"])
         m_gain = mc["level_lufs"] - loudness(T, mf, m_start, total)["lufs"]
+        warn_music_gaps(T, mf, m_start, total)
         run([T.ffmpeg, "-y", "-v", "error", "-i", full, "-ss", f"{m_start:.3f}", "-t", f"{total:.3f}", "-i", mf,
              "-filter_complex",
              f"[1:a]aresample=48000,aformat=channel_layouts=stereo,volume={m_gain:.2f}dB,"
@@ -210,6 +211,19 @@ def build(p: Project, version="v1"):
         raise SystemExit("Falló el encode final")
     print(f"LISTO {total:.1f}s -> {final}")
     return final
+
+
+def warn_music_gaps(T, mf, start, total):
+    """Lesson: a track's breakdown (silences) once landed under the reel's ending. Warn before encoding."""
+    raw = subprocess.run([T.ffmpeg, "-v", "error", "-ss", f"{start:.3f}", "-t", f"{total:.3f}", "-i", str(mf), "-ac", "1",
+                          "-ar", "8000", "-f", "f32le", "-"], capture_output=True).stdout
+    x = np.frombuffer(raw, np.float32)
+    h = 4000
+    db = 20 * np.log10(np.sqrt(np.mean(x[:len(x) // h * h].reshape(-1, h) ** 2, axis=1)) + 1e-9)
+    gaps = [round(i * 0.5, 1) for i, v in enumerate(db) if v < -40 and i * 0.5 < total - 3]
+    if gaps:
+        print(f"  ⚠ la música tiene silencios en el reel en {gaps[:12]} s: mueve drop_at / el segmento con drop "
+              "o usa `reelkit music-profile` para elegir otro tramo")
 
 
 # ---------------------------------------------------------------- captions

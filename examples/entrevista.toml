@@ -1,0 +1,116 @@
+# Reel entrevista completa: InnovaNet & AI360 (CEO) — entrevista Maykol, Tech AI Summit
+# Cortes verificados con `reelkit energy` + `reelkit verify` (inicio/final sin contexto).
+
+[project]
+raw_dir = "../evento/raw/techaisummit"
+work_dir = "../evento/analysis"
+out_dir = "render"
+
+[music]
+file = "../evento/music/ccby_hasenchat_we_love_tech_house.mp3"
+drop_at = 112.45          # el drop cae en "03 EL DESAFÍO"; el tema tiene groove continuo hasta ~195 s
+level_lufs = -21
+credit = "Música: Hasenchat – We Love Tech House (CC BY 3.0)"
+
+[text]
+title = "ENTREVISTA AL CEO DE|{INNOVANET & AI360}"
+title_sub = "Tech AI Summit"
+cta = "¿TU EMPRESA YA USA {IA}|EN CIBERSEGURIDAD?"
+cta_sub = "Te leemos en los comentarios"
+
+[captions]
+highlight = ["4", "MESES", "DESCONTINUADO", "24/7", "24-7", "MULTIDIOMA", "AVATAR", "CIBERSEGURIDAD", "AGÉNTICA",
+             "SMART", "REPORT", "DÍAS", "MINUTOS", "RAPIDEZ", "CHATGPT", "COMPETENCIA", "MENOR", "EDAD", "INCIDENTE",
+             "HERRAMIENTAS", "RÁPIDO"]
+replace = { "re:^chap" = "CHATGPT", "re:^-gpt$" = "", "re:^ia360$" = "AI360", "etiquetera" = "ticketera", "astronoanalistas" = "nuestros analistas", "astronautas" = "nuestros", "resolucionamos" = "solucionamos" }
+
+# ---------------------------------------------------------------- HOOK
+[[segment]]
+id = "hook"
+src = "IMG_4551"
+in = 114.70
+out = 116.70
+hook = "LO DE HACE {4 MESES}|YA ESTÁ DESCONTINUADO"
+tag = ["INNOVANET & AI360", "CEO"]
+
+[[segment]]
+id = "crowd"
+src = "IMG_4530"
+in = 6.00
+out = 7.60
+broll = true
+title = true
+
+[[segment]]
+id = "hall"
+src = "IMG_4559"
+in = 8.00
+out = 10.60
+broll = true
+title = true
+
+# ---------------------------------------------------------------- PREGUNTA 1
+[[segment]]
+id = "q1"
+src = "IMG_4551"
+in = 1.06                          # sin el "estamos" suelto previo: parte en "Hoy estamos con InnovaNet y AI360…"
+out = 7.80
+chip = "QUÉ RESUELVEN"
+tag = ["MAYKOL", "Tech AI Summit"]
+
+[[segment]]
+id = "a1"
+src = "IMG_4551"
+in = 11.90                         # sin la autopresentación con el nombre
+out = 32.85
+chip = "QUÉ RESUELVEN"
+
+# ---------------------------------------------------------------- PREGUNTA 2
+[[segment]]
+id = "q2"
+src = "IMG_4551"
+in = 33.80
+out = 42.66                        # "…resuelven un poco el tema de ciberseguridad"
+chip = "IA + CIBERSEGURIDAD"
+
+[[segment]]
+id = "a2"
+src = "IMG_4551"
+in = 48.70                         # "Bueno, a ver, justamente tú lo dijiste…"
+out = 99.18
+chip = "IA + CIBERSEGURIDAD"
+tag = ["INNOVANET & AI360", "CEO"]
+retag = true
+
+# ---------------------------------------------------------------- PREGUNTA 3
+[[segment]]
+id = "q3"
+src = "IMG_4551"
+in = 101.17
+out = 108.12
+chip = "EL DESAFÍO"
+drop = true
+
+[[segment]]
+id = "a3a"
+src = "IMG_4551"
+in = 108.38
+out = 141.12                       # "…es que hoy día"
+chip = "EL DESAFÍO"
+fix = { seguridad = "ciberseguridad" }
+
+[[segment]]
+id = "a3b"
+src = "IMG_4551"
+in = 143.46                        # salta la trabada "las con… con personas"
+out = 155.34
+chip = "EL DESAFÍO"
+
+# ---------------------------------------------------------------- CIERRE
+[[segment]]
+id = "outro"
+src = "IMG_4562"
+in = 7.00
+out = 12.00
+broll = true
+cta = true

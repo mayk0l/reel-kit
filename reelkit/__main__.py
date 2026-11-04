@@ -14,6 +14,8 @@ def main():
     s.add_argument("--step", type=float, default=0.02)
     s = sub.add_parser("verify", help="escucha cortes: completo + solo inicio + solo final + bordes")
     s.add_argument("project"); s.add_argument("cuts", nargs="+", help="SRC A B [SRC A B ...]")
+    s = sub.add_parser("fillers", help="busca muletillas (eh…) y arranques en falso (palabra repetida)")
+    s.add_argument("project"); s.add_argument("src"); s.add_argument("a", type=float); s.add_argument("b", type=float)
     s = sub.add_parser("spectrum", help="diagnóstico de voz saturada / embarrada")
     s.add_argument("project"); s.add_argument("src"); s.add_argument("a", type=float); s.add_argument("b", type=float)
     s = sub.add_parser("music-search", help="busca música CC0/CC BY en Openverse")
@@ -25,7 +27,7 @@ def main():
     s.add_argument("--times", type=float, nargs="*")
     args = ap.parse_args()
 
-    if args.cmd in ("ingest", "verify", "build", "check"):
+    if args.cmd in ("ingest", "verify", "fillers", "build", "check"):
         from .gpu import ensure_cuda_env
         ensure_cuda_env()
 
@@ -55,6 +57,9 @@ def main():
         if len(c) % 3:
             raise SystemExit("verify espera tríos: SRC A B")
         verify(p, [(c[i], float(c[i + 1]), float(c[i + 2])) for i in range(0, len(c), 3)])
+    elif args.cmd == "fillers":
+        from .verify import fillers
+        fillers(p, args.src, args.a, args.b)
     elif args.cmd == "spectrum":
         from .audio import spectrum_report
         print(spectrum_report(p.tools, p.media(args.src), args.a, args.b))
