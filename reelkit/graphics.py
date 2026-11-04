@@ -6,7 +6,7 @@ slam-in hook headline with keyword boxes, title / CTA cards, drop flash.
 Text markup used in reel.toml: "{palabra}" = keyword on an accent box, "|" = line break.
 
 libass metric calibration for Poppins (measured): em = 0.5675 * Fontsize; with \\an5 at y the caps are
-centred at y + 0.043*S, cap height = 0.40*S; with \\an7 at y the cap top is y + 0.24*S, baseline y + 0.64*S.
+centred at y - 0.060*S (CAP_DY, measured in pixels), cap height = 0.40*S; with \\an7 at y the cap top is y + 0.24*S, baseline y + 0.64*S.
 """
 import re
 from functools import lru_cache
@@ -17,6 +17,7 @@ from PIL import ImageFont
 FONTS = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 EM, W_CORR = 0.5675, 0.985
 W, H = 1080, 1920
+CAP_DY = -0.060      # with \\an5 at y, the caps' visual centre sits at y + CAP_DY*S
 CX = W / 2
 
 
@@ -109,21 +110,30 @@ class Overlay:
 
     def txt(self, S, color=None, weight="ExtraBold", bord=0.0, shad=0.0, blur=0.0, spacing=0.0):
         fn = "Poppins ExtraBold" if weight == "ExtraBold" else "Poppins SemiBold"
-        t = f"\\fn{fn}\\fs{S:.1f}\\1c{color or self.WHITE}\\bord{bord:.1f}\\shad{shad:.1f}\\3c{self.BLACK}\\4c{self.BLACK}"
-        t += f"\\3a&H30&\\4a&H70&\\blur{blur:.1f}"
+        t = f"\\fn{fn}\\fs{S:.1f}\\1c{color or self.WHITE}\\3c{self.BLACK}\\4c{self.BLACK}"
+        if bord or shad:
+            t += f"\\bord1\\3a&HFF&\\shad{max(shad, 0.02 * S):.1f}\\4a&H8C&\\blur{max(blur, 0.045 * S):.1f}"
+        else:
+            t += "\\bord0\\shad0\\blur0"
         return t + (f"\\fsp{spacing:.1f}" if spacing else "")
 
     # ------------------------------------------------------------------ karaoke captions
     def captions(self, chunks, cy=1290, S=92, max_w=940):
         """chunks: list of lists of words {txt, s, e, kw, end}. A box slides to the word being spoken."""
+        # fast speech: word starts must strictly increase, and chunks must never overlap
+        prev = -1.0
+        for chunk in chunks:
+            for w in chunk:
+                w["s"] = max(w["s"], prev + 0.06)
+                prev = w["s"]
         for ci, chunk in enumerate(chunks):
             Ss, placed = layout([(w["txt"], False) for w in chunk], S, gap=0.40, hl_gap=0.40, max_w=max_w)
             pad_x, box_h = 0.15 * Ss, 0.40 * Ss + 0.34 * Ss
-            by = cy + 0.043 * Ss
-            end = min(chunk[-1]["e"] + 0.35, chunk[-1]["end"])
+            by = cy + CAP_DY * Ss
+            end = min(max(chunk[-1]["e"], chunk[-1]["s"] + 0.2) + 0.35, chunk[-1]["end"])
             if ci + 1 < len(chunks):
-                end = min(end, chunks[ci + 1][0]["s"])
-            end = max(end, chunk[-1]["s"] + 0.2)
+                nxt = chunks[ci + 1][0]["s"]
+                end = nxt if nxt - chunk[-1]["s"] < 0.9 else min(end, nxt)
             st = dict(bord=0.055 * Ss, shad=0.03 * Ss, blur=1.2)
             for i, w in enumerate(chunk):
                 t0 = w["s"]
@@ -181,7 +191,7 @@ class Overlay:
         move = f"\\move({CX:.0f},{cy - 26:.1f},{CX:.0f},{cy:.1f},0,300)"
         common = "\\fscx90\\fscy90\\t(0,300,0.5,\\fscx100\\fscy100)\\fad(200,220)"
         self.shape(t0, t1, w, h, h / 2, self.ACC, place=move, tags=common, layer=3, an=5)
-        ty = lambda y0: y0 - 0.043 * S
+        ty = lambda y0: y0 - CAP_DY * S
         label_txt = (f"{{\\1a&H70&}}{n}{{\\1a&H00&}}   {label}" if n else label)
         self.add(t0, t1, f"{{\\an5\\move({CX:.0f},{ty(cy - 26):.1f},{CX:.0f},{ty(cy):.1f},0,300)"
                          f"{self.txt(S, self.DARK, spacing=sp)}{common}}}{label_txt}", layer=4)
@@ -195,12 +205,12 @@ class Overlay:
         for t, hl, cx, w in placed:
             if hl:
                 bx, bw = cx - w / 2 - box_pad * Ss, w + 2 * box_pad * Ss
-                by = yc + 0.043 * Ss - box_h / 2
+                by = yc + CAP_DY * Ss - box_h / 2
                 self.shape(t0, t1, bw, box_h, box_h * 0.2, self.ACC, place=f"\\pos({bx:.1f},{by:.1f})",
                            tags=(f"\\clip({bx:.0f},{by:.0f},{bx + 1:.0f},{by + box_h:.0f})"
                                  f"\\t({delay + 140},{delay + 360},0.5,\\clip({bx:.0f},{by:.0f},{bx + bw:.0f},{by + box_h:.0f}))"
                                  "\\fad(0,200)"), layer=layer - 1)
-                color = f"\\t({delay + 180},{delay + 320},\\1c{self.DARK}\\bord0\\shad0)"
+                color = f"\\t({delay + 180},{delay + 320},\\1c{self.DARK}\\bord0\\shad0\\blur0)"
             else:
                 color = ""
             self.add(t0, t1, f"{{\\an5{enter(cx, yc)}{self.txt(Ss, **st)}{color}\\fad(0,200)}}{t}", layer=layer)
@@ -210,16 +220,13 @@ class Overlay:
         lines = text.split("|")
         box_h = 0.40 * S + 2 * 0.17 * S
         step = box_h + 26
-        self.shape(t0, t1, max_w + 40, step * len(lines) + 120, 60, self.BLACK, alpha="78",
-                   place=f"\\pos({CX - (max_w + 40) / 2:.0f},{top - box_h / 2 - 60:.0f})", tags="\\blur38\\fad(200,220)", layer=1)
         for k, line in enumerate(lines):
             d = k * 230
             slam = lambda cx, y, d=d: (f"\\pos({cx:.1f},{y:.1f})\\fscx128\\fscy128\\alpha&HFF&\\blur8"
-                                       f"\\t({d},{d + 170},0.5,\\fscx100\\fscy100\\alpha&H00&\\blur1)")
+                                       f"\\t({d},{d + 170},0.5,\\fscx100\\fscy100\\alpha&H00&\\blur{0.045 * S:.1f})")
             self._marked_line(t0, t1, line, top + k * step, S, max_w, d, slam)
 
     def card(self, t0, t1, text, sub="", cy=860, S=112, arrow=False, credit="", max_w=940):
-        self.shape(t0, t1, W, H, 0, self.BLACK, alpha="70", place="\\pos(0,0)", tags="\\fad(260,220)", layer=1)
         lines = text.split("|")
         box_h = 0.40 * S + 2 * 0.17 * S
         step = box_h + 14

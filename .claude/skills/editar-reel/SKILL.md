@@ -55,9 +55,14 @@ Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado
 ## 4. Audio
 
 - Todo se nivela solo: voz a -16 LUFS por tramo, mezcla final a -14 LUFS (estándar Reels/TikTok).
-- Si el usuario dice "suena saturado": `python -m reelkit spectrum <proyecto> SRC A B`. Micrófono pegado a la boca =
-  250 Hz alto, 2–3 kHz bajo, cresta < 11 dB → agrega `repair = true` al segmento (EQ correctiva, sin más compresión).
+- Si el usuario dice "suena saturado": `python -m reelkit spectrum <proyecto> SRC A B` y mide cuánto está recortado
+  (muestras sobre 0.9 de escala: >5 % = recorte duro antes del AAC; voz limpia < 1 %). Para eso usa `repair = true`:
+  declipper + quita retumbe + **baja** los agudos sobre 4 kHz (ahí está la distorsión) y deja 2 kHz para inteligibilidad;
+  además ese tramo va 1.5 dB más bajo. Lección: subir presencia/agudos en una toma recortada la hace sonar MÁS saturada.
   Verifica que los dos canales no sean una pista de seguridad distinta antes de concluir.
+- `restore = true` (VoiceFixer, opcional, `requirements-restore.txt` en otro venv + `REELKIT_RESTORE_PY`) reconstruye la
+  voz con IA y reduce más la distorsión, pero puede deformar consonantes (convirtió "Shadow AI" en "Chabón AI").
+  Úsalo solo si `verify` confirma que las palabras clave siguen entendiéndose, y deja que el usuario elija oyendo un A/B.
 - B-roll: su sonido va **silenciado** (voces de fondo pueden decir groserías; pasó). La música lo cubre.
 - Voz en off sobre otra toma: `vo = { src = "...", in = ..., out = ... }`.
 
@@ -73,8 +78,11 @@ Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado
 ## 6. Compilar, revisar, iterar
 
 - `python -m reelkit build <proyecto> --version v1` → `out/reel_v1.mp4`.
-- `python -m reelkit check <proyecto> --version v1 --times 0.5 6 12 20 …` → lo que se escucha con música, LUFS y una
-  hoja de fotogramas `out/check_v1.jpg`. **Mírala** con Read: textos no tapados, cartel de nombre visible, título legible.
+- `python -m reelkit check <proyecto> --version v1 --times 0.5 6 12 20 …` → lo que se escucha con música, LUFS, pico
+  (debe quedar ≤ -1.5 dBTP) y una hoja de fotogramas `out/check_v1.jpg`. **Mírala** con Read: textos no tapados, cartel
+  de nombre visible, título legible, nada encimado.
+- Estilo de gráficos que el usuario aprobó: sin fondos negros ni oscurecer la pantalla, sin contorno negro grueso (solo
+  sombra suave), texto centrado dentro de las cajas amarillas. Si tocas `graphics.py`, mide el centrado en píxeles.
 - Avisa al usuario que tú no puedes escuchar: que lo revise con audífonos y te diga el segundo exacto de cada problema.
 - Cada feedback → mapea el segundo del reel al segmento (la salida de build lista los tiempos acumulados), corrige
   `reel.toml`, `verify`, y compila una versión nueva (v2, v3…). Nunca sobrescribas la versión que el usuario está revisando.

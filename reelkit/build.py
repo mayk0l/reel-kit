@@ -5,12 +5,14 @@ import json
 import re
 import shutil
 import subprocess
+from pathlib import Path
 
 import numpy as np
 
 from . import audio, gpu
 from .graphics import Overlay
 from .project import Project
+from .restore import restored_audio
 from .tools import duration, loudness, probe, run
 
 HDR = ("arib-std-b67", "smpte2084")
@@ -49,7 +51,8 @@ def video_filter(p, seg, src, dur, zoom):
 
 
 def render_piece(p, dst, seg, vsrc, va, dur, zoom=None, voice=None, post=audio.VOICE_POST):
-    """voice=(src, start, gain_db): speech track (may come from another clip). B-roll own sound is muted."""
+    """voice=(src, start, gain_db): speech track from a clip (may be another clip) or, when src is a Path,
+    from a restored WAV. B-roll own sound is muted."""
     T = p.tools
     cmd = [T.ffmpeg, "-y", "-v", "error", "-ss", f"{va:.3f}", "-t", f"{dur:.3f}", "-i", p.media(vsrc)]
     fade = f"aresample=48000,afade=t=in:d=0.02,afade=t=out:st={max(0, dur - 0.03):.3f}:d=0.03"
@@ -57,7 +60,7 @@ def render_piece(p, dst, seg, vsrc, va, dur, zoom=None, voice=None, post=audio.V
         vs, vstart, g = voice
         idx = 0
         if not (vs == vsrc and abs(vstart - va) < 1e-6):
-            cmd += ["-ss", f"{vstart:.3f}", "-t", f"{dur:.3f}", "-i", p.media(vs)]
+            cmd += ["-ss", f"{vstart:.3f}", "-t", f"{dur:.3f}", "-i", vs if isinstance(vs, Path) else p.media(vs)]
             idx = 1
         afilt = f"[{idx}:a]aformat=channel_layouts=stereo,volume={g:.2f}dB,{post},{fade}[a]"
     else:
@@ -100,8 +103,14 @@ def build(p: Project, version="v1"):
             t += real
         else:
             x = audio.load(p.wav(seg["src"]))
-            g = au["voice_lufs"] - loudness(T, p.media(seg["src"]), seg["in"], seg["out"] - seg["in"])["lufs"]
-            post = audio.REPAIR_POST if seg.get("repair") else audio.VOICE_POST
+            if seg.get("restore"):      # destroyed take: neural restoration, then a gentle chain
+                rwav, roff = restored_audio(p, seg["src"], seg["in"], seg["out"])
+                g = au["voice_lufs"] - loudness(T, rwav, seg["in"] - roff, seg["out"] - seg["in"])["lufs"]
+                post = audio.RESTORED_POST
+            else:
+                g = seg.get("voice_lufs", au["voice_lufs"] - (1.5 if seg.get("repair") else 0)) - \
+                    loudness(T, p.media(seg["src"]), seg["in"], seg["out"] - seg["in"])["lufs"]
+                post = audio.REPAIR_POST if seg.get("repair") else audio.VOICE_POST
             parts = audio.trim_pauses(x, seg["in"], seg["out"], au["pause_max"], au["pause_keep"])
             for k, (a, b) in enumerate(parts):
                 base = 1.07 if (st["jumpcut_zoom"] and k % 2 == 1) else 1.0
@@ -111,7 +120,8 @@ def build(p: Project, version="v1"):
                 elif base != 1.0:
                     zoom = f"{base}"
                 name = f"{len(timeline):03d}_{sid}.mkv"
-                real = render_piece(p, pieces_dir / name, seg, seg["src"], a, b - a, zoom, (seg["src"], a, g), post)
+                voice = (rwav, a - roff, g) if seg.get("restore") else (seg["src"], a, g)
+                real = render_piece(p, pieces_dir / name, seg, seg["src"], a, b - a, zoom, voice, post)
                 timeline.append(dict(seg=seg, name=name, src=seg["src"], a=a, b=b, t0=t, t1=t + real))
                 t += real
         print(f"  {timeline[-1]['t1']:6.2f}s  {sid}", flush=True)
@@ -186,7 +196,7 @@ def build(p: Project, version="v1"):
     ln = json.loads(err[err.rindex("{"):err.rindex("}") + 1])
     af = (f"loudnorm=I={tl}:TP=-1.5:LRA=9:measured_I={ln['input_i']}:measured_TP={ln['input_tp']}:"
           f"measured_LRA={ln['input_lra']}:measured_thresh={ln['input_thresh']}:offset={ln['target_offset']}:"
-          "linear=true,aresample=48000")
+          "linear=true,aresample=192000,alimiter=limit=0.82:attack=1:release=60:level=0,aresample=48000")
     final = p.out / f"reel_{version}.mp4"
     burn = subprocess.Popen([T.ffmpeg_ass, "-v", "error", "-i", full.name, "-vf", f"ass={ass.name}:fontsdir=fonts",
                              "-map", "0:v", "-c:v", "rawvideo", "-f", "nut", "-"], stdout=subprocess.PIPE, cwd=p.out)
@@ -241,6 +251,10 @@ def caption_chunks(p, timeline, max_words=3, max_chars=18):
                 q = next((q for q in parts if q["a"] - 0.15 <= ws < q["b"]), None)
                 txt = clean(w.word)
                 if not q or not txt or (words and words[-1]["txt"].endswith(txt) and words[-1]["txt"] != txt):
+                    continue
+                if words and not any(ch.isalnum() for ch in txt):      # "60" + "%" -> "60%"
+                    words[-1]["txt"] += txt
+                    words[-1]["e"] = min(q["t1"], q["t0"] + we - q["a"])
                     continue
                 words.append(dict(txt=txt, raw=w.word.strip(), kw=any(k in hl for k in txt.split()),
                                   s=q["t0"] + max(0.0, ws - q["a"]), e=min(q["t1"], q["t0"] + we - q["a"]), end=q["t1"]))

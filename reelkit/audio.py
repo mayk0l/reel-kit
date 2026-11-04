@@ -11,9 +11,13 @@ from .tools import run
 SR = 16000
 # default voice chain: gentle compression + limiter
 VOICE_POST = "highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=150:makeup=1,alimiter=limit=0.89"
-# lav held against the mouth: boomy 250 Hz, crushed dynamics, dull presence -> EQ only, never more compression
-REPAIR_POST = ("highpass=f=120,equalizer=f=250:t=q:w=1:g=-6,equalizer=f=2500:t=q:w=1.2:g=3.5,"
-               "deesser=i=0.3,alimiter=limit=0.89")
+# after neural restoration (VoiceFixer): keep its dynamics, only tidy up
+RESTORED_POST = "highpass=f=80,acompressor=threshold=-22dB:ratio=2:attack=10:release=200:makeup=1,alimiter=limit=0.89"
+# destroyed lav take (mic at the mouth, clipped before AAC): reconstruct peaks (adeclip), remove boom, keep the
+# 2 kHz intelligibility band, and pull DOWN the 4 kHz+ band - there it is mostly distortion, boosting it sounds worse.
+# Never add more compression. Measured on the Tech AI Summit reel: -7 dB of harshness, "Shadow AI" still intelligible.
+REPAIR_POST = ("adeclip,highpass=f=120,equalizer=f=250:t=q:w=1:g=-6,equalizer=f=2200:t=q:w=1.2:g=3,"
+               "highshelf=f=4200:g=-8,lowpass=f=8500,deesser=i=0.55,alimiter=limit=0.89")
 
 
 @lru_cache(None)
@@ -60,7 +64,7 @@ def trim_pauses(x, a, b, pause_max=0.45, keep=0.15):
 def edge_issues(x, a, b):
     """Warn when a cut lands inside speech. Checks the 40 ms at each edge AND whether speech keeps going
     right after the out point / was already going right before the in point (a word chopped in half)."""
-    seg = x[int(a * SR):int(b * SR)]
+    seg = x[int(max(0, a - 1.5) * SR):int((b + 1.5) * SR)]      # wider context: short soft pieces don't self-trigger
     if not len(seg):
         return []
     ref = np.percentile(np.abs(seg), 99) + 1e-9

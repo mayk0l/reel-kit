@@ -1,0 +1,4 @@
+# Opcional: restauración neural de voz muy saturada (segmentos con restore = true). Pesado (PyTorch).
+# Instálalo en un venv aparte y apunta REELKIT_RESTORE_PY a ese python.
+torch
+voicefixer

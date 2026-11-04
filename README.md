@@ -7,7 +7,8 @@ Lo que hace:
 
 - **Analiza** todos los videos: transcripción (Whisper), volumen por clip, miniaturas y detección de HDR.
 - **Fija cortes verificados de oído**: usa la energía del audio y transcribe solo el inicio y solo el final de cada corte.
-- **Nivela el audio** (voz a −16 LUFS, mezcla a −14 LUFS) y repara voces saturadas o embarradas.
+- **Nivela el audio** (voz a −16 LUFS, mezcla a −14 LUFS, pico ≤ −1.5 dBTP) y repara voces recortadas o embarradas.
+  Opcional: restauración con IA (VoiceFixer) para tomas destruidas.
 - **Música libre de derechos** (Openverse, CC0 / CC BY), alineada a un drop y con *ducking* bajo la voz.
 - **Motion graphics**:
   - subtítulos karaoke con caja deslizante;
@@ -62,6 +63,17 @@ Algunas distros (openSUSE, Fedora) traen un ffmpeg sin HEVC ni x264. En ese caso
 2. `reelkit` lo detecta solo. Si no, exporta `REELKIT_FFMPEG=/ruta/Shotcut.app/ffmpeg`.
 
 El ffmpeg del sistema se sigue usando para los gráficos (libass).
+
+### Opcional: restauración de voz con IA
+
+VoiceFixer usa PyTorch y pesa varios GB, así que va en un entorno aparte:
+
+```bash
+python -m venv .venv-restore
+.venv-restore/bin/pip install -r requirements-restore.txt     # Windows: .venv-restore\Scripts\pip ...
+```
+
+Apunta `REELKIT_RESTORE_PY` al python de ese entorno y marca `restore = true` en el segmento.
 
 ## Uso con Claude Code
 
