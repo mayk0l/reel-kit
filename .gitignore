@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+# material de proyectos: nunca al repo
+*.mov
+*.MOV
+*.mp4
+*.mkv
+*.wav
+*.mp3
+work/
+out/
+raw/

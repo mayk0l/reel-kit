@@ -1,0 +1,159 @@
+# Reel "Tech AI Summit" — Maykol & Matías
+# Tiempos en segundos del clip original. Cada entrada/salida verificada con `reelkit energy` + `reelkit verify`.
+# Marcado de texto: {palabra} = caja de acento, | = salto de línea.
+
+[project]
+raw_dir = "raw/techaisummit"
+work_dir = "analysis"
+out_dir = "render"
+
+[music]
+file = "music/ccby_hasenchat_we_love_tech_house.mp3"
+drop_at = 337.48          # entrada del bajo; cae en el segmento con drop = true
+level_lufs = -21
+credit = "Música: Hasenchat – We Love Tech House (CC BY 3.0)"
+
+[text]
+title = "¿CÓMO USAN LA {IA}|LAS EMPRESAS|EN CHILE?"
+title_sub = "Fuimos al Tech AI Summit a preguntar"
+cta = "¿Y TÚ, YA USAS {IA}|EN TU TRABAJO?"
+cta_sub = "Te leemos en los comentarios"
+
+[captions]
+highlight = ["SEMANA", "HORAS", "DÍAS", "MINUTOS", "SHADOW", "IAS", "20%", "60%", "CONTROL", "GOBERNANZA", "VITAL",
+             "AFUERA", "MENOR", "EDAD", "INCIDENTE", "CIBERSEGURIDAD", "HUMANA", "ESENCIAL", "EQUIVOCAN",
+             "REEMPLACE", "PERSONAS", "JÓVENES", "PROBAR", "CUALQUIERA", "ENAMORARSE", "PROBLEMA", "SOLUCIÓN", "IMPORTANTE"]
+replace = { "re:^tech(ai|eye|ia)" = "TECH AI SUMMIT" }
+
+# ---------------------------------------------------------------- HOOK
+[[segment]]
+id = "hook1"
+src = "IMG_4543"
+in = 36.62
+out = 41.47
+tag = ["DIGEVO", "IA para empresas"]
+hook = "DE {1 SEMANA}|A {2 HORAS}"
+repair = true                      # micrófono pegado a la boca: retumbe + voz aplastada
+
+[[segment]]
+id = "hook2"
+src = "IMG_4551"
+in = 87.55
+out = 93.39
+tag = ["INNOVANET & AI360"]
+hook = "DE {2 DÍAS}|A {2 MINUTOS}"
+
+# ---------------------------------------------------------------- INTRO
+[[segment]]
+id = "intro"
+src = "IMG_4528"                   # toma de la bandera, voz en off de otra entrevista
+in = 0.50
+vo = { src = "IMG_4560", in = 1.58, out = 3.72 }
+drop = true
+
+[[segment]]
+id = "crowd"
+src = "IMG_4530"
+in = 6.00
+out = 7.60
+broll = true
+title = true
+
+[[segment]]
+id = "hall"
+src = "IMG_4559"
+in = 8.00
+out = 10.60
+broll = true
+title = true
+
+# ---------------------------------------------------------------- DESARROLLO
+[[segment]]
+id = "shadow1"
+src = "IMG_4543"
+in = 64.77
+out = 76.80
+chip = "SHADOW AI"
+tag = ["DIGEVO", "IA para empresas"]
+retag = true
+repair = true
+fix = { primer = "principal", ideas = "IAs" }
+
+[[segment]]
+id = "shadow1b"
+src = "IMG_4543"
+in = 87.50
+out = 99.10
+chip = "SHADOW AI"
+repair = true
+
+[[segment]]
+id = "shadow2"
+src = "IMG_4537"
+in = 79.55
+out = 90.88
+chip = "SHADOW AI"
+tag = ["AXMOS", "Partner cloud & IA"]
+
+[[segment]]
+id = "cib1"
+src = "IMG_4551"
+in = 138.31
+out = 141.26
+chip = "CIBERSEGURIDAD"
+fix = { seguridad = "ciberseguridad" }
+
+[[segment]]
+id = "cib2"
+src = "IMG_4551"
+in = 141.74
+out = 149.32
+chip = "CIBERSEGURIDAD"
+
+[[segment]]
+id = "humano"
+src = "IMG_4556"
+in = 200.23
+out = 214.60
+chip = "EL FACTOR HUMANO"
+tag = ["RESILITY", "Ciberseguridad"]
+
+[[segment]]
+id = "rinde"
+src = "IMG_4542"
+in = 51.74
+out = 54.58
+chip = "EL FACTOR HUMANO"
+tag = ["RINDEGASTOS", "Gestión de gastos"]
+
+# ---------------------------------------------------------------- CONCLUSIÓN
+[[segment]]
+id = "angel1"
+src = "IMG_4560"
+in = 38.38
+out = 51.20
+chip = "EL CONSEJO"
+tag = ["ÁNGEL IZURIETA", "Gerente General · Huawei Cloud"]
+
+[[segment]]
+id = "angel2"
+src = "IMG_4560"
+in = 102.98
+out = 107.60
+chip = "EL CONSEJO"
+
+[[segment]]
+id = "angel3"
+src = "IMG_4560"
+in = 149.10
+out = 152.47                       # "…es lo más importante" completo (antes se cortaba en 152.25)
+chip = "EL CONSEJO"
+
+# ---------------------------------------------------------------- CIERRE
+[[segment]]
+id = "outro"
+src = "IMG_4562"
+in = 7.00
+out = 12.00
+broll = true
+cta = true

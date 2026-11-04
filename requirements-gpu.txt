@@ -1,0 +1,3 @@
+# Solo con GPU NVIDIA (Windows / Linux). CUDA 12 + cuDNN 9 vía pip; reelkit los carga solo.
+nvidia-cublas-cu12
+nvidia-cudnn-cu12==9.*
