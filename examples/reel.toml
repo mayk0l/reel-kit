@@ -99,14 +99,14 @@ tag = ["AXMOS", "Partner cloud & IA"]
 id = "cib1"
 src = "IMG_4551"
 in = 138.31
-out = 141.26
+out = 141.12                       # "…es que hoy día" completo (140.65-141.06 es "hoy día")
 chip = "CIBERSEGURIDAD"
 fix = { seguridad = "ciberseguridad" }
 
 [[segment]]
 id = "cib2"
 src = "IMG_4551"
-in = 141.74
+in = 143.46                        # salta la trabada "las con… con personas…": parte limpio en "personas con menos"
 out = 149.32
 chip = "CIBERSEGURIDAD"
 

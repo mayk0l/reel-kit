@@ -196,7 +196,7 @@ def build(p: Project, version="v1"):
     ln = json.loads(err[err.rindex("{"):err.rindex("}") + 1])
     af = (f"loudnorm=I={tl}:TP=-1.5:LRA=9:measured_I={ln['input_i']}:measured_TP={ln['input_tp']}:"
           f"measured_LRA={ln['input_lra']}:measured_thresh={ln['input_thresh']}:offset={ln['target_offset']}:"
-          "linear=true,aresample=192000,alimiter=limit=0.82:attack=1:release=60:level=0,aresample=48000")
+          "linear=true,aresample=192000,alimiter=limit=0.78:attack=1:release=60:level=0,aresample=48000")
     final = p.out / f"reel_{version}.mp4"
     burn = subprocess.Popen([T.ffmpeg_ass, "-v", "error", "-i", full.name, "-vf", f"ass={ass.name}:fontsdir=fonts",
                              "-map", "0:v", "-c:v", "rawvideo", "-f", "nut", "-"], stdout=subprocess.PIPE, cwd=p.out)
