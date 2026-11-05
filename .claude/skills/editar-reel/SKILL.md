@@ -48,7 +48,9 @@ Estructura que funcionó:
 HOOK con la frase más fuerte sacada de una respuesta (se repite después en su contexto) → tarjeta de título sobre b-roll
 (`ENTREVISTA AL CEO DE|{EMPRESA}`) → cada pregunta del entrevistador abre un bloque con `chip` y su respuesta completa →
 CTA. Cartel con el nombre del entrevistador (`tag = ["MAYKOL", "Tech AI Summit"]`) y del entrevistado (`retag` al volver).
-Saca: errores del entrevistador (dijo "Google" en vez de "Huawei"), autopresentaciones con nombres que no puedes
+**Bloopers como hook**: un error espontáneo del entrevistador ("Cámara Comercial… ¡Chilena! no, no, no") engancha
+mucho. Patrón: `hook = "TOMA {1}"` en el error y `hook = "TOMA {2}"` en la presentación bien hecha tras la tarjeta de
+título. Ofrécelo cuando veas una toma fallida al inicio de un clip. Fuera de eso, saca: errores del entrevistador (dijo "Google" en vez de "Huawei"), autopresentaciones con nombres que no puedes
 confirmar, frases repetidas, agradecimientos finales.
 Presenta el guion como tabla: bloque, clip, tramo, frase. Con varias opciones, usa AskUserQuestion con el guion de cada
 una en la vista previa. Evita datos dudosos que el entrevistado mismo no sabe confirmar.
