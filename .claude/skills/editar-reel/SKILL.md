@@ -71,7 +71,8 @@ Pausas largas dentro de un tramo se recortan solas (jump cuts con zoom alternado
 `python -m reelkit fillers <proyecto> SRC A B` sobre cada tramo de voz **antes** de compilar, sobre todo en las
 presentaciones del entrevistador. Whisper no escribe los "eh" y con contexto "limpia" las repeticiones; `fillers` parte
 en frases por las pausas reales, transcribe cada una sola y hace una prueba de eliminación (si al silenciar un bloque el
-texto no cambia, era muletilla). Tiene falsos positivos: confirma con `verify` y corta saltándote el bloque (dos
+texto no cambia, era muletilla; solo en frases de ≤4 s, con más contexto Whisper rellena). Sirve también como mapa de
+  frases con sus límites de energía para elegir cortes. Tiene falsos positivos: confirma con `verify` y corta saltándote el bloque (dos
 segmentos del mismo `src`). Si la muletilla está pegada a una palabra sin silencio, corta en el valle más bajo y escucha
 "inicio"/"final". Cuando el usuario reporte una muletilla, búscala tú (energía + palabras), no le pidas más detalles.
 
@@ -86,7 +87,9 @@ segmentos del mismo `src`). Si la muletilla está pegada a una palabra sin silen
 - `restore = true` (VoiceFixer, opcional, `requirements-restore.txt` en otro venv + `REELKIT_RESTORE_PY`) reconstruye la
   voz con IA y reduce más la distorsión, pero puede deformar consonantes (convirtió "Shadow AI" en "Chabón AI").
   Úsalo solo si `verify` confirma que las palabras clave siguen entendiéndose, y deja que el usuario elija oyendo un A/B.
-- Voz fina/áspera (el caso opuesto al micrófono pegado): `post = "highpass=f=90,equalizer=f=200:t=q:w=1:g=3,highshelf=f=4500:g=-5,alimiter=limit=0.89"`
+- Voz fina/áspera (el caso opuesto al micrófono pegado, p.ej. la entrevista de la Cámara de IA: 250 Hz −14, presencia −3,
+  aspereza −21 dB): mide variantes hasta acercarte a la referencia limpia (≈ −3 / −12 / −26) y ponla en `[audio] post`
+  (todo el proyecto) o `post` del segmento. Ejemplo: `post = "highpass=f=90,equalizer=f=200:t=q:w=1:g=3,highshelf=f=4500:g=-5,alimiter=limit=0.89"`
   reemplaza la cadena de ese segmento (cualquier filtro de audio de ffmpeg).
 - B-roll: su sonido va **silenciado** (voces de fondo pueden decir groserías; pasó). La música lo cubre.
 - Voz en off sobre otra toma: `vo = { src = "...", in = ..., out = ... }`.
@@ -102,13 +105,18 @@ segmentos del mismo `src`). Si la muletilla está pegada a una palabra sin silen
 4. Cuenta: el tema suena desde `drop_at − t_drop` hasta `drop_at − t_drop + duración_del_reel`; todo ese tramo debe ser
    continuo. En reels largos el drop puede ir a mitad del video (al empezar la 2ª o 3ª pregunta) como "segundo aire".
    `build` avisa (⚠) si la música cae en silencios.
+5. Reel de ~3 min: necesitas ~3 min de tema continuo después de `drop_at − t_drop`. Si no alcanza, usa otro tema (del
+   mismo artista para mantener la estética) y varía la música entre reels publicados seguidos. En Jamendo, Hasenchat
+   tiene muchos temas CC BY 3.0 largos y continuos ("Mium (Tech House Mix)": groove de 7 a 345 s).
 
 ## 6. Compilar, revisar, iterar
 
 - `python -m reelkit build <proyecto> --version v1` → `out/reel_v1.mp4`.
 - `python -m reelkit check <proyecto> --version v1 --times 0.5 6 12 20 …` → lo que se escucha con música, LUFS, pico
   (debe quedar ≤ -1.5 dBTP) y una hoja de fotogramas `out/check_v1.jpg`. **Mírala** con Read: textos no tapados, cartel
-  de nombre visible, título legible, nada encimado.
+  de nombre visible, título legible, nada encimado. Un subtítulo tenue en la hoja suele ser una captura en el fundido
+  entre dos bloques (~160 ms), no falta de contraste: confírmalo con otro fotograma antes de cambiar el estilo.
+- Instagram corta a los 3:00: deja el reel en ≤ 2:58 (saca saludos, "¿qué tal, cómo está?", comentarios del entrevistador).
 - Estilo de gráficos que el usuario aprobó: sin fondos negros ni oscurecer la pantalla, sin contorno negro grueso (solo
   sombra suave), texto centrado dentro de las cajas amarillas. Si tocas `graphics.py`, mide el centrado en píxeles.
 - Avisa al usuario que tú no puedes escuchar: que lo revise con audífonos y te diga el segundo exacto de cada problema.

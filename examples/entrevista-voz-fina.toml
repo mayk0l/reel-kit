@@ -1,0 +1,111 @@
+# Reel entrevista completa: Camila, Cámara Chilena de IA — entrevista Maykol, Tech AI Summit
+# Cortes verificados con `reelkit energy` + `reelkit verify`. Voz fina y áspera: cadena `post` medida (presencia -11,
+# aspereza -27 dB, cerca de la referencia limpia).
+
+[project]
+raw_dir = "../evento/raw/techaisummit"
+work_dir = "../evento/analysis"
+out_dir = "render"
+
+[audio]
+post = "adeclip,highpass=f=90,equalizer=f=200:t=q:w=0.8:g=7,equalizer=f=2300:t=q:w=0.9:g=-6,highshelf=f=4200:g=-4,deesser=i=0.4,acompressor=threshold=-20dB:ratio=2.5:attack=5:release=150:makeup=1,alimiter=limit=0.89"   # voz fina y áspera (para todo el proyecto)
+
+[music]
+file = "../evento/music/ccby_hasenchat_we_love_tech_house.mp3"
+drop_at = 112.45          # drop en "02 LA IA EN CHILE"; groove continuo hasta ~195 s del tema
+level_lufs = -21
+credit = "Música: Hasenchat – We Love Tech House (CC BY 3.0)"
+
+[text]
+title = "ENTREVISTA A LA|{CÁMARA CHILENA DE IA}"
+title_sub = "Tech AI Summit"
+cta = "¿Y TÚ, YA USAS LA {IA}|PARA POTENCIARTE?"
+cta_sub = "Te leemos en los comentarios"
+
+[captions]
+highlight = ["SISTEMA", "OPERATIVO", "ÉTICA", "RESPONSABLE", "13", "COMISIONES", "VOZ", "VOTO", "TALENTO", "HERRAMIENTAS",
+             "GIGANTE", "REFERENTE", "POTENCIEN", "POTENCIARSE", "2017", "CHILE"]
+replace = { "re:^preferente$" = "referente", "puño" = "empeño", "re:^tech(ai|eye|ia)" = "TECH AI SUMMIT" }
+
+# ---------------------------------------------------------------- HOOK
+[[segment]]
+id = "hook"
+src = "IMG_4548"
+in = 155.33
+out = 159.10                       # "Chile ha crecido un montón y somos un país referente en inteligencia artificial"
+hook = "CHILE: UN PAÍS|{REFERENTE EN IA}"
+tag = ["CAMILA", "Vicepresidenta · Cámara Chilena de IA"]
+
+[[segment]]
+id = "crowd"
+src = "IMG_4530"
+in = 6.00
+out = 7.60
+broll = true
+title = true
+
+[[segment]]
+id = "hall"
+src = "IMG_4559"
+in = 8.00
+out = 10.60
+broll = true
+title = true
+
+# ---------------------------------------------------------------- 01 QUÉ ES LA CÁMARA
+[[segment]]
+id = "q1"
+src = "IMG_4548"
+in = 15.55                         # "Hola, hoy estamos en la Cámara Chilena de IA. Cuéntanos, ¿qué podemos encontrar hoy en este stand?"
+out = 20.74
+chip = "QUÉ ES LA CÁMARA"
+tag = ["MAYKOL", "Tech AI Summit"]
+
+[[segment]]
+id = "a1a"
+src = "IMG_4548"
+in = 20.92                         # "Bueno, primero que todo me presento, yo soy Camila, vicepresidenta…"
+out = 26.45                        # se salta su usuario de redes (26.85-31.2), que Whisper no transcribe bien
+chip = "QUÉ ES LA CÁMARA"
+tag = ["CAMILA", "Vicepresidenta · Cámara Chilena de IA"]
+retag = true
+
+[[segment]]
+id = "a1b"
+src = "IMG_4548"
+in = 31.42                         # "Bueno, la Cámara es una agrupación gremial…"
+out = 94.45                        # "…traigan su talento acá para que lo potencien con inteligencia artificial"
+chip = "QUÉ ES LA CÁMARA"
+
+# ---------------------------------------------------------------- 02 LA IA EN CHILE
+[[segment]]
+id = "q2"
+src = "IMG_4548"
+in = 95.05                         # "Oye, una consulta. Yo igual me dedico a la tecnología. ¿Hace cuánto…?"
+out = 106.10
+chip = "LA IA EN CHILE"
+drop = true
+
+[[segment]]
+id = "a2a"
+src = "IMG_4548"
+in = 106.10                        # "Este año sobre todo…"
+out = 143.06                       # "…así que ha habido un incremento gigante"
+chip = "LA IA EN CHILE"
+fix = { "guía" = "IA" }
+
+[[segment]]
+id = "a2b"
+src = "IMG_4548"
+in = 155.33                        # se salta el dato dudoso ("46%… 98%… no sé cuál es el porcentaje")
+out = 159.10
+chip = "LA IA EN CHILE"
+
+# ---------------------------------------------------------------- CIERRE
+[[segment]]
+id = "outro"
+src = "IMG_4562"
+in = 7.00
+out = 12.00
+broll = true
+cta = true

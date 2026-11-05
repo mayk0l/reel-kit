@@ -110,7 +110,7 @@ def build(p: Project, version="v1"):
             else:
                 g = seg.get("voice_lufs", au["voice_lufs"] - (1.5 if seg.get("repair") else 0)) - \
                     loudness(T, p.media(seg["src"]), seg["in"], seg["out"] - seg["in"])["lufs"]
-                post = seg.get("post") or (audio.REPAIR_POST if seg.get("repair") else audio.VOICE_POST)
+                post = seg.get("post") or au.get("post") or (audio.REPAIR_POST if seg.get("repair") else audio.VOICE_POST)
             parts = audio.trim_pauses(x, seg["in"], seg["out"], au["pause_max"], au["pause_keep"])
             for k, (a, b) in enumerate(parts):
                 base = 1.07 if (st["jumpcut_zoom"] and k % 2 == 1) else 1.0

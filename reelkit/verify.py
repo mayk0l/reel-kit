@@ -77,7 +77,7 @@ def fillers(p: Project, src, a, b, gap=0.3):
             flag = "? corta: puede ser ruido o muletilla, escúchala"
         print(f"  {s_:7.2f}-{e_:7.2f}  {t[:72]:<72} {flag}")
         found += bool(flag.startswith("⚠"))
-        if len(blocks) > 1 and not flag:
+        if len(blocks) > 1 and not flag and e_ - s_ <= 4.0:     # with long context Whisper fills in anyway: false positives
             base = clip(s_ - 0.05, e_ + 0.08)
             for bs, be in blocks:
                 if be - bs < 0.15:
