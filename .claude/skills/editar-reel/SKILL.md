@@ -116,6 +116,8 @@ segmentos del mismo `src`). Si la muletilla está pegada a una palabra sin silen
   (debe quedar ≤ -1.5 dBTP) y una hoja de fotogramas `out/check_v1.jpg`. **Mírala** con Read: textos no tapados, cartel
   de nombre visible, título legible, nada encimado. Un subtítulo tenue en la hoja suele ser una captura en el fundido
   entre dos bloques (~160 ms), no falta de contraste: confírmalo con otro fotograma antes de cambiar el estilo.
+- **Caras**: revisa 3–4 fotogramas del hook. Si el titular tapa la cara del entrevistado (pasó con UserEmotion), usa
+  `hook_y` en el segmento (por defecto 470; ~930 = altura del pecho, entre la cara y los subtítulos).
 - Instagram corta a los 3:00: deja el reel en ≤ 2:58 (saca saludos, "¿qué tal, cómo está?", comentarios del entrevistador).
 - Estilo de gráficos que el usuario aprobó: sin fondos negros ni oscurecer la pantalla, sin contorno negro grueso (solo
   sombra suave), texto centrado dentro de las cajas amarillas. Si tocas `graphics.py`, mide el centrado en píxeles.
@@ -134,7 +136,7 @@ segmentos del mismo `src`). Si la muletilla está pegada a una palabra sin silen
 
 `[[segment]]`: `id`, `src` (nombre del archivo sin extensión), `in`, `out`, `tag = ["NOMBRE", "cargo"]`, `retag`,
 `chip`, `hook`, `repair`, `fix = { palabra_mal_transcrita = "corrección" }`, `broll`, `title`, `cta`, `drop`, `vo`,
-`focus_x` (0–1, para recortar videos horizontales a vertical), `punch`, `post` (cadena de audio propia),
+`focus_x` (0–1, para recortar videos horizontales a vertical), `punch`, `hook_y`, `post` (cadena de audio propia),
 `voice_lufs`, `restore`.
 Texto: `{palabra}` = caja de acento, `|` = salto de línea. `[captions] highlight` = palabras en amarillo,
 `replace` = correcciones globales (`"re:^regex" = "TEXTO"`; valor `""` borra la palabra, p.ej. `"re:^-gpt$" = ""`).

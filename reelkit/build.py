@@ -165,7 +165,7 @@ def build(p: Project, version="v1"):
         last = max(r["t1"] for r in timeline if r["seg"] is seg)
         if q is first[seg["id"]]:
             if seg.get("hook"):
-                ov.headline(q["t0"], last, seg["hook"])
+                ov.headline(q["t0"], last, seg["hook"], top=seg.get("hook_y", 470))   # move it off faces
             tag = tuple(seg.get("tag", ()))
             if tag and (tag not in tags_done or seg.get("retag")):
                 tags_done.add(tag)
